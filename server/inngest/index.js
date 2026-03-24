@@ -6,6 +6,7 @@ import "dotenv/config";
 export const inngest = new Inngest({
   id: "social-media",
   eventKey: process.env.INNGEST_EVENT_KEY,
+  signingKey: process.env.INNGEST_SIGNING_KEY,
 });
 
 const syncUserCreation = inngest.createFunction(
