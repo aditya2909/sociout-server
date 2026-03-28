@@ -10,9 +10,7 @@ export const inngest = new Inngest({
 });
 
 const syncUserCreation = inngest.createFunction(
-  { id: "sync-user-from-clerk" },
-  triggers: [
-  { event: "clerk/user.created" },],
+  { id: "sync-user-from-clerk", triggers: [{ event: "clerk/user.created" }] },
   async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
