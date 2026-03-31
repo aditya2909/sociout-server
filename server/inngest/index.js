@@ -40,8 +40,7 @@ const syncUserCreation = inngest.createFunction(
 
 //Inngest functionto update user data in database
 const syncUserUpdation = inngest.createFunction(
-  { id: "update-user-from-clerk" },
-  { event: "clerk/user.updated" },
+  { id: "update-user-from-clerk", triggers: [{ event: "clerk/user.updated" }] },
   async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
@@ -58,7 +57,7 @@ const syncUserUpdation = inngest.createFunction(
 
 //Inngest function to delete user data in database
 const syncUserDeletion = inngest.createFunction(
-  { id: "delete-user-from-clerk" },
+  { id: "delete-user-from-clerk", triggers: [{ event: "clerk/user.deleted" }] },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
     const { id } = event.data;
@@ -123,4 +122,9 @@ const sendNewConnectionReminder = inngest.createFunction(
 );
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, syncUserUpdation, syncUserDeletion, sendNewConnectionReminder];
+export const functions = [
+  syncUserCreation,
+  syncUserUpdation,
+  syncUserDeletion,
+  sendNewConnectionReminder,
+];
