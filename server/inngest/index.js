@@ -2,8 +2,11 @@ import { Inngest } from "inngest";
 import User from "../model/User.js";
 import "dotenv/config";
 import connectDB from "../config/db.js";
+<<<<<<< HEAD
 import Connection from "../model/Connection.js";
 import sendEmail from "../config/nodeMailer.js";
+=======
+>>>>>>> 07801810f77a80eac90405f1e95b87041fa64086
 
 // Create a client to send and receive events
 export const inngest = new Inngest({
@@ -15,6 +18,7 @@ export const inngest = new Inngest({
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk", triggers: [{ event: "clerk/user.created" }] },
   async ({ event }) => {
+    await connectDB();
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
     let username = email_addresses[0].email_address.split("@")[0];
@@ -42,6 +46,7 @@ const syncUserCreation = inngest.createFunction(
 const syncUserUpdation = inngest.createFunction(
   { id: "update-user-from-clerk", triggers: [{ event: "clerk/user.updated" }] },
   async ({ event }) => {
+    await connectDB();
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
 
@@ -58,8 +63,8 @@ const syncUserUpdation = inngest.createFunction(
 //Inngest function to delete user data in database
 const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-from-clerk", triggers: [{ event: "clerk/user.deleted" }] },
-  { event: "clerk/user.deleted" },
   async ({ event }) => {
+    await connectDB();
     const { id } = event.data;
 
     await User.findByIdAndDelete(id);
