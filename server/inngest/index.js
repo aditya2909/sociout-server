@@ -2,11 +2,10 @@ import { Inngest } from "inngest";
 import User from "../model/User.js";
 import "dotenv/config";
 import connectDB from "../config/db.js";
-<<<<<<< HEAD
 import Connection from "../model/Connection.js";
 import sendEmail from "../config/nodeMailer.js";
-=======
->>>>>>> 07801810f77a80eac90405f1e95b87041fa64086
+import Story from "../model/Story.js";
+import Message from "../model/Message.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({
@@ -78,6 +77,7 @@ const sendNewConnectionReminder = inngest.createFunction(
     triggers: [{ event: "app/connection-request" }],
   },
   async ({ event, step }) => {
+    await connectDB();
     const { connectionId } = event.data;
 
     await step.run("send-connection-request-mail", async () => {
@@ -126,10 +126,61 @@ const sendNewConnectionReminder = inngest.createFunction(
   },
 );
 
+const deleteStory = inngest.createFunction(
+  { id: "story-delete", triggers: [{ event: "app/story-delete" }] },
+  async ({ event, step }) => {
+    await connectDB();
+    const { storyId } = event.data;
+    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-for-24-hours", in24Hours);
+    await step.run("delete-story", async () => {
+      await Story.findByIdAndDelete(storyId);
+      return { message: "Story deleted." };
+    });
+
+    await User.findByIdAndDelete(id);
+  },
+);
+
+const sendNotificationOfUnseenMessages = inngest.createFunction(
+  { id: "send-unseen-message-notification" },
+  { cron: "TZ=America/New_York 0 9 * * *" },
+  async ({ step }) => {
+    const messages = await Message.find({ seen: false }).populate("to_user_id");
+    const unseenCount = {};
+
+    messages.map((message) => {
+      unseenCount[message.to_user_id._id] =
+        (unseenCount[message.to_user_id._id] || 0) + 1;
+    });
+
+    for (const userId in unseenCount) {
+      const user = await User.findById(userId);
+      const subject = `📬 You have ${unseenCount[userId]} unseen messages`;
+      const body = `<div style="font-family: Arial, sans-serif; padding: 20px;>
+      <h2>Hi ${user.full_name},</h2>
+      <p>You have ${unseenCount[userId]} unseen messages</p>
+      <p>Click <a href="${process.env.FRONEND_URL}/connections" style="color: #10b981;" >here</a> to view them</p>
+      <br />
+      <p>Thanks, <br/> Sociout - Stay Connected</p>
+      </div>`;
+
+      await sendEmail({
+        to: user.email,
+        subject,
+        body,
+      });
+    }
+    return { message: "Notification sent." };
+  },
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
   syncUserUpdation,
   syncUserDeletion,
   sendNewConnectionReminder,
+  deleteStory,
+  sendNotificationOfUnseenMessages,
 ];
